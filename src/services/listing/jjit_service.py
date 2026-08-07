@@ -6,6 +6,7 @@ from src.services.listing.base import ListingService
 logger = get_logger(__name__)
 
 class JJITService(ListingService):
+    BASE_URL = "https://justjoin.it/api/candidate-api/"
     SUPPORTED_QUERY_FIELDS = frozenset(
         {
             "job_cat",
