@@ -1,0 +1,8 @@
+{
+  "skills": ["Python"],
+  "min_salary_pln": 1,
+  "seniority": ["mid", "senior"],
+  "work_mode": ["remote"],
+  "excluded_skills": ["PHP", "Java", "fullstack", "frontend"],
+  "extra_notes": ""
+}
