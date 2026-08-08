@@ -3,6 +3,7 @@ import asyncio
 from aiohttp import ClientSession
 
 from src.cli import build_parser, query_from_args
+from src.config import settings
 from src.logger import get_logger
 from src.schemas.job import JobQuery
 from src.services.ai import OllamaAIService
@@ -11,7 +12,7 @@ from src.services.email import GmailService
 from src.services.listing import get_listing_service
 from src.services.query_filter import apply_client_filters
 
-DEFAULT_EMAIL_TO = "j.mizerka98@gmail.com"
+DEFAULT_EMAIL_TO = settings.get_env("EMAIL_TO")
 logger = get_logger(__name__)
 
 
@@ -71,17 +72,17 @@ async def main(argv=None):
             return
 
         body = format_jobs(matches)
+        to = args.email_to or DEFAULT_EMAIL_TO
+        if not to:
+            raise ValueError(
+                "No recipient email configured: set EMAIL_TO in .env or pass --email-to"
+            )
+        subject = settings.get(
+            "email", "subject_template", default="{count} matching jobs"
+        ).format(count=len(matches))
         gmail = GmailService()
-        gmail.send_email(
-            to=args.email_to or DEFAULT_EMAIL_TO,
-            subject=f"{len(matches)} matching jobs",
-            body=body,
-        )
-        logger.info(
-            "Email sent with %d matching jobs to %s",
-            len(matches),
-            args.email_to or DEFAULT_EMAIL_TO,
-        )
+        gmail.send_email(to=to, subject=subject, body=body)
+        logger.info("Email sent with %d matching jobs to %s", len(matches), to)
     except Exception:
         logger.exception("Run failed")
         raise

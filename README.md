@@ -14,6 +14,22 @@ Scrapes job offers from listing services, filters them with a local AI model (Ol
 - [Ollama](https://ollama.com) running locally on `localhost:11434` with a chat model (e.g. `gemma4:latest`)
 - A Google Cloud project with the Gmail API enabled and an OAuth client secret file for sending email
 
+## Configuration
+
+Non-secret settings live in `config.json` (provider API URLs, Ollama model/endpoint, logging). Machine-specific and secret values live in `.env` (gitignored). Copy `.env.example` to `.env` and fill in your values:
+
+```bash
+cp .env.example .env
+```
+
+| Variable | Purpose |
+| --- | --- |
+| `EMAIL_TO` | Default recipient for matching jobs (overridable with `--email-to`) |
+| `GMAIL_CLIENT_SECRET` | File name of the Gmail OAuth client secret in the project root |
+| `GMAIL_TOKEN_PATH` | Where the OAuth token is stored (relative to project root) |
+
+The existing `preferences.json` keeps driving the AI matcher (see [Preferences](#preferences)).
+
 ## Installation
 
 ```bash
@@ -52,7 +68,7 @@ Without any options it searches Just Join IT for all offers and sends matches to
 | `--pub-date` | Only offers published within N days |
 | `--with-salary` | Only offers with salary |
 | `--min-salary` | Minimum salary in PLN |
-| `--email-to` | Recipient email address (default is hard-coded in `main.py`) |
+| `--email-to` | Recipient email address (default from `EMAIL_TO` in `.env`) |
 | `--preferences` | Path to a preferences JSON used by the AI matcher (default: `preferences.json`) |
 
 ### Examples
@@ -108,8 +124,11 @@ pytest
 
 ```
 main.py                          Entry point: search -> filter -> email
+config.json                      Non-secret settings (providers, AI, logging)
+.env                             Machine-specific settings (recipient, Gmail paths)
 preferences.json                 AI matcher preferences
 src/
+  config.py                      Config loader (.env + config.json)
   cli.py                         argparse CLI and query building
   logger.py                      Logging (console + rotating file in logs/)
   schemas/                       Pydantic models (job, justjoin.it, nofluffjobs)

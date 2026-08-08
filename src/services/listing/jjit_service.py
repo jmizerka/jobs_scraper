@@ -1,3 +1,4 @@
+from src.config import settings
 from src.logger import get_logger
 from src.schemas.jjit_schema import JJITJob, JJITListing
 from src.schemas.job import JobOffer, JobQuery
@@ -6,7 +7,12 @@ from src.services.listing.base import ListingService
 logger = get_logger(__name__)
 
 class JJITService(ListingService):
-    BASE_URL = "https://justjoin.it/api/candidate-api/"
+    BASE_URL = settings.get(
+        "listing", "jjit", "base_url", default="https://justjoin.it/api/candidate-api/"
+    )
+    LISTING_URL = settings.get(
+        "listing", "jjit", "listing_url", default="https://justjoin.it/job-offer/"
+    )
     SUPPORTED_QUERY_FIELDS = frozenset(
         {
             "job_cat",
@@ -39,7 +45,7 @@ class JJITService(ListingService):
         for slug in slugs:
             async with self.session.get(f"{self.BASE_URL}offers/{slug}") as resp:
                 data = await resp.json()
-            data["listing_url"] = f"https://justjoin.it/job-offer/{slug}"
+            data["listing_url"] = f"{self.LISTING_URL}{slug}"
             jobs[slug] = JJITJob.model_validate(data)
         return jobs
 

@@ -1,6 +1,7 @@
 import argparse
 from enum import Enum
 
+from src.config import settings
 from src.schemas.job import (
     ContractType,
     Experience,
@@ -35,7 +36,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--provider",
         nargs="+",
-        default=["jjit"],
+        default=settings.get("cli", "default_provider", default=["jjit"]),
         choices=list(REGISTRY),
         help="Listing service(s) to search, e.g. jjit",
     )

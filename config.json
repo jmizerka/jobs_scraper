@@ -1,0 +1,47 @@
+{
+  "cli": {
+    "default_provider": ["jjit"]
+  },
+  "email": {
+    "scopes": ["https://www.googleapis.com/auth/gmail.send"],
+    "subject_template": "{count} matching jobs"
+  },
+  "ai": {
+    "model": "gemma4:latest",
+    "base_url": "http://localhost:11434",
+    "max_attempts": 3,
+    "fallback": "include",
+    "structured_output": true,
+    "temperature": 0
+  },
+  "listing": {
+    "jjit": {
+      "base_url": "https://justjoin.it/api/candidate-api/",
+      "listing_url": "https://justjoin.it/job-offer/"
+    },
+    "nfjobs": {
+      "base_url": "https://nofluffjobs.com/api/",
+      "page_size": 20,
+      "search_params": [
+        ["pageFrom", "1"],
+        ["pageTo", "1"],
+        ["pageSize", "20"],
+        ["withSalaryMatch", "true"],
+        ["salaryCurrency", "PLN"],
+        ["salaryPeriod", "month"],
+        ["region", "pl"],
+        ["language", "pl-PL"],
+        ["sort", "newest"]
+      ],
+      "detail_query": "region=pl&salaryCurrency=PLN&salaryPeriod=month&language=pl-PL",
+      "url_template": "https://nofluffjobs.com/pl/jobs/{url}"
+    }
+  },
+  "logging": {
+    "level": "INFO",
+    "backup_count": 7,
+    "dir": "logs",
+    "file": "job_scraper.log",
+    "format": "%(asctime)s %(levelname)s [%(name)s] %(message)s"
+  }
+}
