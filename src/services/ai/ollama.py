@@ -3,6 +3,7 @@ import re
 
 from aiohttp import ClientSession
 
+from src.config import settings
 from src.logger import get_logger
 from src.schemas.job import JobOffer
 from src.services.ai.base import AIService
@@ -69,19 +70,38 @@ _JSON_OBJECT_RE = re.compile(r"\{.*\}", re.DOTALL)
 
 
 class OllamaAIService(AIService):
-    def __init__(self, preferences=None, model="gemma4:latest",
-                 base_url="http://localhost:11434", session=None,
-                 max_attempts=3, fallback="include",
-                 structured_output=True, temperature=0):
+    def __init__(
+        self,
+        preferences=None,
+        model=None,
+        base_url=None,
+        session=None,
+        max_attempts=None,
+        fallback=None,
+        structured_output=None,
+        temperature=None,
+    ):
         super().__init__(preferences)
-        self.model = model
-        self.base_url = base_url
+        self.model = model or settings.get("ai", "model", default="gemma4:latest")
+        self.base_url = base_url or settings.get(
+            "ai", "base_url", default="http://localhost:11434"
+        )
         self._owns_session = session is None
         self.session = session or ClientSession()
-        self.max_attempts = max_attempts
-        self.fallback = fallback
-        self.structured_output = structured_output
-        self.temperature = temperature
+        self.max_attempts = max_attempts or settings.get(
+            "ai", "max_attempts", default=3
+        )
+        self.fallback = fallback or settings.get("ai", "fallback", default="include")
+        self.structured_output = (
+            settings.get("ai", "structured_output", default=True)
+            if structured_output is None
+            else structured_output
+        )
+        self.temperature = (
+            settings.get("ai", "temperature", default=0)
+            if temperature is None
+            else temperature
+        )
         self._schema_unsupported = False
         self.stats = {"retried": 0, "fallback_included": 0, "transport_failed": 0}
 

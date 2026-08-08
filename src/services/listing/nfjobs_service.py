@@ -1,5 +1,6 @@
 from datetime import datetime, timezone
 
+from src.config import settings
 from src.logger import get_logger
 from src.schemas.job import JobOffer, JobQuery
 from src.schemas.nfjobs_schema import NFJobsJob, NFJobsListing
@@ -8,7 +9,38 @@ from src.services.listing.base import ListingService
 logger = get_logger(__name__)
 
 class NFJobsService(ListingService):
-    BASE_URL = "https://nofluffjobs.com/api/"
+    BASE_URL = settings.get(
+        "listing", "nfjobs", "base_url", default="https://nofluffjobs.com/api/"
+    )
+    PAGE_SIZE = settings.get("listing", "nfjobs", "page_size", default=20)
+    SEARCH_PARAMS = settings.get(
+        "listing",
+        "nfjobs",
+        "search_params",
+        default=[
+            ["pageFrom", "1"],
+            ["pageTo", "1"],
+            ["pageSize", "20"],
+            ["withSalaryMatch", "true"],
+            ["salaryCurrency", "PLN"],
+            ["salaryPeriod", "month"],
+            ["region", "pl"],
+            ["language", "pl-PL"],
+            ["sort", "newest"],
+        ],
+    )
+    DETAIL_QUERY = settings.get(
+        "listing",
+        "nfjobs",
+        "detail_query",
+        default="region=pl&salaryCurrency=PLN&salaryPeriod=month&language=pl-PL",
+    )
+    URL_TEMPLATE = settings.get(
+        "listing",
+        "nfjobs",
+        "url_template",
+        default="https://nofluffjobs.com/pl/job/{url}",
+    )
 
     SUPPORTED_QUERY_FIELDS = frozenset(
         {
@@ -47,9 +79,8 @@ class NFJobsService(ListingService):
     }
 
     SEARCH_URL = (
-        f"{BASE_URL}search/posting?pageFrom=1&pageTo=1&pageSize=20"
-        "&withSalaryMatch=true&salaryCurrency=PLN&salaryPeriod=month"
-        "&region=pl&language=pl-PL&sort=newest"
+        f"{BASE_URL}search/posting?"
+        + "&".join(f"{key}={value}" for key, value in SEARCH_PARAMS)
     )
 
     async def search(self, query: JobQuery) -> dict[str, JobOffer]:
@@ -70,13 +101,12 @@ class NFJobsService(ListingService):
         jobs = {}
         for ref in references:
             async with self.session.get(
-                f"{self.BASE_URL}posting/{ref}?region=pl&salaryCurrency=PLN"
-                "&salaryPeriod=month&language=pl-PL"
+                f"{self.BASE_URL}posting/{ref}?{self.DETAIL_QUERY}"
             ) as resp:
                 data = await resp.json()
             listing = listing_by_ref.get(ref)
             if listing is not None:
-                data["listing_url"] = f"https://nofluffjobs.com/pl/job/{listing.url}"
+                data["listing_url"] = self.URL_TEMPLATE.format(url=listing.url)
                 data["fullyRemote"] = listing.fullyRemote
             jobs[ref] = NFJobsJob.model_validate(data)
         return jobs
@@ -90,11 +120,7 @@ class NFJobsService(ListingService):
             title=job.title,
             company=job.company.name if job.company else None,
             url=job.listing_url
-            or (
-                f"https://nofluffjobs.com/pl/jobs/{job.postingUrl}"
-                if job.postingUrl
-                else None
-            ),
+            or (cls.URL_TEMPLATE.format(url=job.postingUrl) if job.postingUrl else None),
             description=job.details.description if job.details else None,
             required_skills=[
                 item.value for item in (requirements.musts if requirements else []) if item.value
@@ -201,6 +227,6 @@ class NFJobsService(ListingService):
             criteria["city"].append(query.city)
         return {
             "criteriaSearch": criteria,
-            "pageSize": 20,
+            "pageSize": cls.PAGE_SIZE,
             "withSalaryMatch": bool(query.with_salary),
         }
