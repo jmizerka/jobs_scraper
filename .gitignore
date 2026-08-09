@@ -222,4 +222,7 @@ logs
 client_secret_*
 token.json
 
+# Per-config tracking state
+state/
+
 .idea
