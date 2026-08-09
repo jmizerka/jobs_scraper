@@ -43,5 +43,8 @@
     "dir": "logs",
     "file": "job_scraper.log",
     "format": "%(asctime)s %(levelname)s [%(name)s] %(message)s"
+  },
+  "state": {
+    "db_path": "state/jobs.db"
   }
 }
