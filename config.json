@@ -38,7 +38,7 @@
     }
   },
   "logging": {
-    "level": "INFO",
+    "level": "DEBUG",
     "backup_count": 7,
     "dir": "logs",
     "file": "job_scraper.log",

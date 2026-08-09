@@ -144,6 +144,47 @@ async def test_search_returns_combined_jobs():
     assert jobs["job-two"].source == "jjit"
 
 
+async def test_search_paginates_until_data_empty():
+    query_str = JJITService.parse_query(JobQuery())
+    search_url = f"{JJITService.BASE_URL}/{query_str}"
+    responses = {
+        f"{search_url}&to=0&itemsCount=1500": {
+            "data": [{"slug": "job-one"}],
+            "meta": {
+                "from": 1,
+                "totalItems": 2,
+                "prev": {"cursor": 0, "itemsCount": 1},
+                "next": {"cursor": 2, "itemsCount": 1},
+            },
+        },
+        f"{search_url}&to=2&itemsCount=1500": {
+            "data": [{"slug": "job-two"}],
+            "meta": {
+                "from": 2,
+                "totalItems": 2,
+                "prev": {"cursor": 1, "itemsCount": 1},
+                "next": {"cursor": 3, "itemsCount": 1},
+            },
+        },
+        f"{search_url}&to=3&itemsCount=1500": {"data": []},
+        "https://justjoin.it/api/candidate-api/offers/job-one": {"title": "First"},
+        "https://justjoin.it/api/candidate-api/offers/job-two": {"title": "Second"},
+    }
+    session = FakeSession(responses)
+    service = JJITService(session)
+
+    jobs = await service.search(JobQuery())
+
+    assert set(jobs) == {"job-one", "job-two"}
+    assert jobs["job-one"].title == "First"
+    assert jobs["job-two"].title == "Second"
+    assert [url for url in session.requested if "offers?" in url] == [
+        f"{search_url}&to=0&itemsCount=1500",
+        f"{search_url}&to=2&itemsCount=1500",
+        f"{search_url}&to=3&itemsCount=1500",
+    ]
+
+
 def test_to_job_offer_maps_common_fields():
     jj = JJITJob.model_validate(
         {

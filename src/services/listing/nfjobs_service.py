@@ -19,8 +19,8 @@ class NFJobsService(ListingService):
         "search_params",
         default=[
             ["pageFrom", "1"],
-            ["pageTo", "1"],
-            ["pageSize", "20"],
+            ["pageTo", "5"],
+            ["pageSize", "1500"],
             ["withSalaryMatch", "true"],
             ["salaryCurrency", "PLN"],
             ["salaryPeriod", "month"],

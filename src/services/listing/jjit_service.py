@@ -32,9 +32,20 @@ class JJITService(ListingService):
     async def search(self, query: JobQuery) -> dict[str, JobOffer]:
         query_str = self.parse_query(query)
         logger.debug("JJIT search query: %s", query_str)
-        async with self.session.get(f"{self.BASE_URL}/{query_str}") as resp:
-            result = await resp.json()
-        listings = [JJITListing.model_validate(item) for item in result["data"]]
+        listings = []
+        start = 0
+        while True:
+            url = f"{self.BASE_URL}/{query_str}&from={start}&itemsCount=1500"
+            async with self.session.get(url) as resp:
+                result = await resp.json()
+            page = result.get("data", [])
+            if not page:
+                break
+            listings.extend(JJITListing.model_validate(item) for item in page)
+            next_page = (result.get("meta") or {}).get("next") or {}
+            if next_page.get("cursor") is None:
+                break
+            start = next_page["cursor"]
         slugs = [listing.slug for listing in listings]
         jobs = await self._get_jobs(slugs)
         logger.debug("Fetched %d jobs from jjit", len(jobs))
